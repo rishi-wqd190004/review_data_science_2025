@@ -24,7 +24,7 @@ transform = transforms.Compose(
          std=(0.5,0.5,0.5)
      )]
 )
-batch_size = 4
+batch_size = 64
 
 full_set = CIFAR10(
                 root='./data',
@@ -54,9 +54,9 @@ classes = ('plane', 'car', 'bird', 'cat',
            'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 
 def train_step(model: torch.nn.Module, data_loader: torch.utils.data.DataLoader, loss_fn: torch.nn.Module, optimizer: torch.optim.Optimizer, accuracy_metric, device: torch.device=device):
+    model.train()
     train_loss = 0
     accuracy_metric.reset()
-    model.to(device)
     for batch, (x,y) in enumerate(data_loader):
         x, y = x.to(device), y.to(device)
         # 1. forward pass
@@ -78,12 +78,11 @@ def train_step(model: torch.nn.Module, data_loader: torch.utils.data.DataLoader,
     train_loss /= len(data_loader)
     train_acc = accuracy_metric.compute()
 
-    print(f"Train loss: {train_loss:.5f} | Train accuracy: {train_acc:.2f}%")
+    return train_loss, train_acc
 
 def test_step(model: torch.nn.Module, data_loader: torch.utils.data.DataLoader, loss_fn: torch.nn.Module, accuracy_metric, device: torch.device=device, valid: bool=True):
     test_loss = 0
     accuracy_metric.reset()
-    model.to(device)
     model.eval()
     # inference context manager
     with torch.inference_mode():
@@ -92,7 +91,7 @@ def test_step(model: torch.nn.Module, data_loader: torch.utils.data.DataLoader, 
             # 1. forward pass
             test_pred = model(x)
             # 2. train and loss accuracy
-            loss = accuracy_metric(test_pred, y)
+            loss = loss_fn(test_pred, y)
             test_loss += loss.item()
             preds = torch.argmax(test_pred, dim=1)
             accuracy_metric.update(preds, y)
@@ -101,6 +100,6 @@ def test_step(model: torch.nn.Module, data_loader: torch.utils.data.DataLoader, 
         test_loss /= len(data_loader)
         test_acc = accuracy_metric.compute()
         if valid:
-            print(f"Val loss: {test_loss:.5f} | Val accuracy: {test_acc:.2f}%\n")
+            return test_loss, test_acc
         else:
-            print(f"Test loss: {test_loss:.5f} | Test accuracy: {test_acc:.2f}%\n")
+            return test_loss, test_acc
