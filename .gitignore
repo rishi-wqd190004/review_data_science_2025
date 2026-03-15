@@ -6,3 +6,4 @@ model
 .python-version
 .gitignore
 .vscode/*
+*.jpg
