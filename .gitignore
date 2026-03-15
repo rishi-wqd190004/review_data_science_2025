@@ -5,3 +5,4 @@ data
 model
 .python-version
 .gitignore
+.vscode/*
