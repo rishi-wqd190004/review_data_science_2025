@@ -1,7 +1,11 @@
 import torch
 import torchvision
 import kornia.augmentation as K
+import matplotlib.pyplot as plt
+import torchvision.transforms as T
 from torch.utils.data import DataLoader, random_split
+
+from helper import visualize_smpl
 
 def get_device():
     if torch.cuda.is_available():
@@ -14,6 +18,9 @@ def get_device():
     else:
         print("Using CPU")
         return torch.device('cpu')
+
+# base transformation to get data into CHW, 0-1 range 
+base_transformation = T.ToTensor()
 
 train_transformation = K.AugmentationSequential(
     # 1. Geometric
@@ -39,8 +46,10 @@ test_transformation = K.AugmentationSequential(
 
 raw_dataset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True)
 
-full_train_dataset = torchvision.datasets.CIFAR10(root='./data', train=True, transform=train_transformation, download=True)
-test_dataset = torchvision.datasets.CIFAR10(root='./data', train=False, transform=test_transformation, download=True)
+full_train_dataset = torchvision.datasets.CIFAR10(root='./data', train=True, transform=base_transformation, download=True)
+test_dataset = torchvision.datasets.CIFAR10(root='./data', train=False, transform=base_transformation, download=True)
+
+classes = full_train_dataset.classes
 
 # split data into train and val
 train_size = int(0.8 * len(full_train_dataset))
@@ -54,6 +63,10 @@ BATCH_SIZE = 64
 train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=2)
 val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=2)
 test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=2)
+
+# visualize train or val data
+visualize_smpl(train_dataset, classes, 'train')
+visualize_smpl(val_dataset, classes, 'val')
 
 if __name__ == "__main__":
     get_device()
