@@ -1,6 +1,7 @@
 import torch
 import torchvision
 import kornia.augmentation as K
+from torch.utils.data import DataLoader, random_split
 
 def get_device():
     if torch.cuda.is_available():
@@ -29,7 +30,7 @@ train_transformation = K.AugmentationSequential(
     data_keys=['input']
 )
 
-val_transformation = K.AugmentationSequential(
+test_transformation = K.AugmentationSequential(
     # 1. Normalization
     K.Normalize(mean=torch.tensor([0.4914, 0.4822, 0.4465]), 
                 std=torch.tensor([0.2023, 0.1994, 0.2010])),
@@ -39,8 +40,21 @@ val_transformation = K.AugmentationSequential(
 raw_dataset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True)
 
 full_train_dataset = torchvision.datasets.CIFAR10(root='./data', train=True, transform=train_transformation, download=True)
-val_dataset = torchvision.datasets.CIFAR10(root='./data', train=False, transform=val_transformation, download=True)
+test_dataset = torchvision.datasets.CIFAR10(root='./data', train=False, transform=test_transformation, download=True)
 
+# split data into train and val
+train_size = int(0.8 * len(full_train_dataset))
+val_size = len(full_train_dataset) - train_size
+# torch generator
+generator = torch.Generator().manual_seed(42)
+
+train_dataset, val_dataset = random_split(full_train_dataset, [train_size, val_size], generator=generator)
+
+BATCH_SIZE = 64
+train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=2)
+val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=2)
+test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=2)
 
 if __name__ == "__main__":
     get_device()
+    print(f"Train samples: {len(train_dataset)}, Validation samples: {len(val_dataset)}, Test Samples: {len(test_dataset)}")
