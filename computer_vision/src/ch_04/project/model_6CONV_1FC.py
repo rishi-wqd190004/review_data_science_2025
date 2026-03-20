@@ -55,6 +55,6 @@ class MDL_6CONV_1FC(nn.Module):
     def forward(self, x):
         return self.layer_stack(x)
     
-
-mdl = MDL_6CONV_1FC()
-summary(mdl, input_size=(1,3,32,32))
+if __name__ == "__main__":    
+    mdl = MDL_6CONV_1FC()
+    summary(mdl, input_size=(1,3,32,32))
