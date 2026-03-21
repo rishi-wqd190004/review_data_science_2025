@@ -11,12 +11,13 @@ class CIFAR10_6CONV_1FC_LightTrain(L.LightningModule):
         self.val_trans = val_trans
         self.lr = lr
         self.criterion = nn.CrossEntropyLoss()
+        self.save_hyperparameters(ignore=['model', 'train_trans', 'val_trans'])
 
         # torchmetrics for accuracy and f1
         self.train_metrics = torchmetrics.MetricCollection(
             {
-                "accuracy": torchmetrics.classification.Accuracy(task='multiclass', num_classes=num_classes),
-                "f1": torchmetrics.classification.F1(task='multiclass', num_classes=num_classes)
+                "acc": torchmetrics.classification.Accuracy(task='multiclass', num_classes=num_classes),
+                "f1": torchmetrics.classification.F1Score(task='multiclass', num_classes=num_classes, average='macro')
             },
             prefix='train_',
         )
@@ -31,9 +32,6 @@ class CIFAR10_6CONV_1FC_LightTrain(L.LightningModule):
         self.log("train_loss", loss, prog_bar=True, on_step=True, on_epoch=True)
         self.log_dict(self.train_metrics, prog_bar=True, on_step=False, on_epoch=True)
         return loss
-
-    def on_train_batch_end(self):
-        self.train_metrics.reset()
 
     def validation_step(self, batch, batch_idx):
         x, y = batch
