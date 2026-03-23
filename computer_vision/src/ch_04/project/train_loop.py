@@ -4,7 +4,7 @@ import torch.nn as nn
 import torchmetrics
 
 class CIFAR10_6CONV_1FC_LightTrain(L.LightningModule):
-    def __init__(self, model, train_trans, val_trans, num_classes=10, lr=1e-3):
+    def __init__(self, model, train_trans, val_trans, num_classes=10, lr=1e-4):
         super().__init__()
         self.model = model
         self.train_trans = train_trans
