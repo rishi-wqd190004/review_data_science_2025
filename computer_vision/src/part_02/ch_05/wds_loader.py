@@ -6,7 +6,7 @@ import torch.nn as nn
 import kornia as K
 from torch.utils.data import DataLoader
 
-def get_wds_loader(mode, shard_path, batch_size=256, ssd_cache="/home/rishi/review_data_science_2025/computer_vision/src/part_02/ch_05/.cache/wds"):
+def get_wds_loader(mode, shard_path, batch_size=64, ssd_cache="/home/rishi/review_data_science_2025/computer_vision/src/part_02/ch_05/.cache/wds"):
 
     pattern = os.path.join(shard_path, f"{mode}-*.tar")
     files = sorted(glob.glob(pattern))
@@ -25,18 +25,18 @@ def get_wds_loader(mode, shard_path, batch_size=256, ssd_cache="/home/rishi/revi
         wds.WebDataset(
             files,
             cache_dir=ssd_cache,
-            shardshuffle=(mode=="train")
+            shardshuffle=True
             )
             .shuffle(1000 if mode == "train" else 0)
             .decode("pil")
-            .to_tuple("jpeg.jpg", "jpeg.cls") # as per the data_preprocessing tar files
+            .to_tuple("jpg", "cls") # as per the data_preprocessing tar files
             .map_tuple(base_transform, lambda y: y)
     )
 
     loader = DataLoader(
         dataset,
         batch_size=batch_size,
-        num_workers=16,
+        num_workers=4,
         pin_memory=True,
         drop_last=(mode == "train")
     )
