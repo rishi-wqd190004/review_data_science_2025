@@ -4,8 +4,8 @@ import torch.optim as optim
 import pytorch_lightning as pl
 import torchmetrics
 from pytorch_lightning.callbacks import ModelCheckpoint, LearningRateMonitor
-from alexnet_v2 import AlexNet_V2
-from wds_loader import get_wds_loader, ImageNetAugmentor
+from computer_vision.src.part_02.ch_05.alexnet.alexnet_v2 import AlexNet_V2
+from computer_vision.src.part_02.ch_05.alexnet.wds_loader import get_wds_loader, ImageNetAugmentor
 
 class ImageNetLightningTrainer(pl.LightningModule):
     def __init__(self, model, train_path, val_path, num_classes=1000, batch_size=128):
@@ -82,18 +82,26 @@ class ImageNetLightningTrainer(pl.LightningModule):
     #     # self.conf_mat.reset()
 
     def configure_optimizers(self):
-        optimizer = optim.SGD(self.parameters(), lr=1e-2, momentum=0.9, weight_decay=1e-4)
-        scheduler = {
-            'scheduler': optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=3),
-            'monitor': 'val_loss',
+        steps_per_epoch = 1281167 // self.hparams.batch_size
+        total_steps = steps_per_epoch * self.trainer.max_epochs
+        optimizer = optim.SGD(self.parameters(), lr=0.1, momentum=0.9, weight_decay=1e-4)
+        scheduler = optim.lr_scheduler.OneCycleLR(
+            optimizer,
+            max_lr=0.1,
+            total_steps=total_steps,#self.trainer.estimated_stepping_batches,
+            pct_start=0.1
+        )
+        return {
+            'optimizer': optimizer,#optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=3),
+            'lr_scheduler': {'scheduler': scheduler, "interval": "step"}
         }
-        return [optimizer], [scheduler]
+        #return [optimizer], [scheduler]
     
     def train_dataloader(self):
         return get_wds_loader("train", self.hparams.train_path, batch_size=self.hparams.batch_size)
     
     def val_dataloader(self):
-        return get_wds_loader("val", self.hparams.train_path, batch_size=self.hparams.batch_size)
+        return get_wds_loader("val", self.hparams.val_path, batch_size=self.hparams.batch_size)
     
 
 def main():
@@ -107,7 +115,7 @@ def main():
         model=alexnet,
         train_path=SHARD_PATH,
         val_path=SHARD_PATH,
-        batch_size=256
+        batch_size=512
     )
 
     # callbacks
@@ -126,8 +134,10 @@ def main():
         accelerator="gpu",
         devices=1,
         max_epochs=200,
-        precision="16-mixed",
+        precision="bf16-mixed",
+        benchmark=True,
         gradient_clip_val=1.0,
+        accumulate_grad_batches=1,
         callbacks=[checkpoint_callback, lr_monitor],
         log_every_n_steps=25,
     )

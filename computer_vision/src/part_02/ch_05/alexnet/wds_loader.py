@@ -56,7 +56,9 @@ class ImageNetAugmentor(nn.Module):
         if self.mode == "train":
             # training- randomness for generalization
             self.transform = nn.Sequential(
-                K.augmentation.RandomResizedCrop(size=(224,224), scale=(0.08, 1.0)),
+                #K.augmentation.RandomResizedCrop(size=(224,224), scale=(0.2, 1.0)),
+                K.geometry.Resize(256,256),
+                K.augmentation.CenterCrop(size=(224, 224)),
                 K.augmentation.RandomHorizontalFlip(),
                 K.augmentation.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1),
                 K.augmentation.Normalize(mean=self.mean, std=self.std)
@@ -64,12 +66,18 @@ class ImageNetAugmentor(nn.Module):
         else:
             # val/test - deterministic for consistency
             self.transform = nn.Sequential(
+                K.geometry.Resize(256,256),
                 K.augmentation.CenterCrop(size=(224,224)),
                 K.augmentation.Normalize(mean=self.mean, std=self.std)
             )
     
     @torch.no_grad()
     def forward(self, x):
+        # Ensure data is 0-1 float before normalizing
+        if x.dtype == torch.uint8:
+            x = x.float() / 255.0
+        elif x.max() > 1.0:
+            x = x / 255.0
         return self.transform(x)
 
 def main():

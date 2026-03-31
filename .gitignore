@@ -7,3 +7,6 @@ model
 .gitignore
 .vscode/*
 *.jpg
+*logs*
+lightning_logs
+*.ckpt
