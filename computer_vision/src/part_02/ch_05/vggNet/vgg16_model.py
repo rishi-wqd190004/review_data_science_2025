@@ -7,7 +7,7 @@ print(torch.cuda.get_device_name(0))
 
 # will run this over Imagenet1k1
 class VGGNET_16(nn.Module):
-    def __init__(self, num_classes=500):
+    def __init__(self, num_classes=499):
         super().__init__()
         self.layer1 = nn.Sequential(
             nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1),
